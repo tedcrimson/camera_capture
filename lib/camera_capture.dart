@@ -1,21 +1,14 @@
 library camera_capture;
 
-// Copyright 2019 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-// ignore_for_file: public_member_api_docs
-
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery_previewer/gallery_previewer.dart';
-import 'package:path_provider/path_provider.dart';
 
-typedef Future<List<Uint8List>> SelectPicture(BuildContext context, List<Uint8List> images);
+typedef Future<List<Uint8List>> SelectPicture(
+    BuildContext context, List<Uint8List> images);
 
 class CameraPage extends StatefulWidget {
   final int cameraIndex;
@@ -23,7 +16,11 @@ class CameraPage extends StatefulWidget {
   final Widget overlay;
   final SelectPicture onSelectImages;
 
-  CameraPage({this.cameraIndex = 0, this.multiSelect = true, this.overlay, this.onSelectImages});
+  CameraPage(
+      {this.cameraIndex = 0,
+      this.multiSelect = true,
+      this.overlay,
+      this.onSelectImages});
 
   @override
   _CameraPageState createState() {
@@ -31,7 +28,8 @@ class CameraPage extends StatefulWidget {
   }
 }
 
-class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, TickerProviderStateMixin {
+class _CameraPageState extends State<CameraPage>
+    with WidgetsBindingObserver, TickerProviderStateMixin {
   CameraController controller;
   String imagePath;
   int cameraIndex;
@@ -44,7 +42,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Ti
     cameraIndex = widget.cameraIndex;
     availableCameras().then((c) {
       cameras = c;
-      if (cameras != null && cameras.length > 0) onNewCameraSelected(cameras[cameraIndex]);
+      if (cameras != null && cameras.length > 0)
+        onNewCameraSelected(cameras[cameraIndex]);
     });
     WidgetsBinding.instance.addObserver(this);
   }
@@ -113,10 +112,13 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Ti
                             color: Colors.transparent),
                         child: Container(
                           // padding: EdgeInsets.all(8.0),
-                          decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                          decoration: BoxDecoration(
+                              shape: BoxShape.circle, color: Colors.white),
                         ),
                       ),
-                      onTap: controller == null ? null : onTakePictureButtonPressed,
+                      onTap: controller == null
+                          ? null
+                          : onTakePictureButtonPressed,
                     ),
                   ),
                   // Spacer(),
@@ -129,7 +131,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Ti
                         ),
                         onPressed: () {
                           // NavigatorManager.showBottomPanel(context, _getUpperLayer());
-                          scaffoldKey.currentState.showBottomSheet((_) => _getUpperLayer());
+                          scaffoldKey.currentState
+                              .showBottomSheet((_) => _getUpperLayer());
                         }),
                   ),
                 ],
@@ -203,7 +206,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Ti
     if (controller != null) {
       await controller.dispose();
     }
-    controller = CameraController(cameraDescription, ResolutionPreset.high, enableAudio: false);
+    controller = CameraController(cameraDescription, ResolutionPreset.high,
+        enableAudio: false);
 
     // If the controller is updated then update the UI.
     controller.addListener(() {
@@ -240,10 +244,10 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Ti
       showInSnackBar('Error: select a camera first.');
       return null;
     }
-    final Directory extDir = await getApplicationDocumentsDirectory();
-    final String dirPath = '${extDir.path}/Pictures/flutter_test';
-    await Directory(dirPath).create(recursive: true);
-    final String filePath = '$dirPath/${timestamp()}.jpg';
+    // final Directory extDir = await getApplicationDocumentsDirectory();
+    // final String dirPath = '${extDir.path}/Pictures/flutter_test';
+    // await Directory(dirPath).create(recursive: true);
+    // final String filePath = '$dirPath/${timestamp()}.jpg';
 
     if (controller.value.isTakingPicture) {
       // A capture is already pending, do nothing.
@@ -251,19 +255,21 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Ti
     }
 
     try {
-      await controller.takePicture(filePath);
-      File file = File(filePath);
-      List<Uint8List> images = [file.readAsBytesSync()];
+      XFile xFile = await controller.takePicture();
+
+      // File file = File(filePath);
+      var bytes = await xFile.readAsBytes();
+      List<Uint8List> images = [bytes];
       if (widget.onSelectImages != null) {
         images = await widget.onSelectImages(context, images);
       } else {
         Navigator.of(context).pop(images);
       }
+      return xFile.path;
     } on CameraException catch (e) {
       _showCameraException(e);
       return null;
     }
-    return filePath;
   }
 
   void _showCameraException(CameraException e) {
